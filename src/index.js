@@ -25,6 +25,7 @@ var EventEmitter = require('events').EventEmitter;
 
 function Map(options){
 	this.redis = redis.createClient(options.port, options.host);
+	this.prefix = options.prefix;
 }
 
 util.inherits(Map, EventEmitter);
@@ -52,7 +53,7 @@ Map.prototype.reset = function(done){
 Map.prototype.get_access = function(id, user, done){
 	var self = this;
 	async.parallel({
-		access_level:function(next){
+		access:function(next){
 			self.redis.get(self.key(id + ':access'), next);
 		},
 		collaborator:function(next){
@@ -103,6 +104,11 @@ Map.prototype.get_owner = function(id, done){
 Map.prototype.add_collaborator = function(id, user, done){
 	var self = this;
 	self.redis.sadd(self.key(id + ':collabs'), user, done);
+}
+
+Map.prototype.get_collaborators = function(id, done){
+	var self = this;
+	self.redis.smembers(self.key(id + ':collabs'), done);
 }
 
 Map.prototype.remove_collaborator = function(id, user, done){
@@ -157,7 +163,7 @@ Map.prototype.create_project = function(id, owner, access, done){
 	})
 }
 
-Map.prototype.update_project_id = function(id, newid, done){
+Map.prototype.rename_project = function(id, newid, done){
 	var self = this;
 	async.parallel({
 		owner:function(next){
@@ -174,23 +180,25 @@ Map.prototype.update_project_id = function(id, newid, done){
 			done(error);
 			return;
 		}
+
 		self.delete_project(id, function(error){
 			if(error){
 				done(error);
 				return;
 			}
+
 			async.parallel([
 				function(next){
-					self.redis.set(self.key(id), project.owner, next);
+					self.redis.set(self.key(newid), project.owner, next);
 				},
 				function(next){
-					self.redis.set(self.key(id + ':access'), project.access, next);
+					self.redis.set(self.key(newid + ':access'), project.access, next);
 				},
 				function(next){
 
 					async.forEach(project.collabs, function(collab, next){
-						self.redis.sadd(self.key(id + ':collabs'), collab, next);
-					})
+						self.redis.sadd(self.key(newid + ':collabs'), collab, next);
+					}, next)
 
 				}
 			], done)
@@ -203,13 +211,13 @@ Map.prototype.delete_project = function(id, done){
 	var self = this;
 	async.parallel([
 		function(next){
-			self.redis.del(self.key(id), owner, next);
+			self.redis.del(self.key(id), next);
 		},
 		function(next){
-			self.redis.del(self.key(id + ':access'), access, next);
+			self.redis.del(self.key(id + ':access'), next);
 		},
 		function(next){
-			self.redis.del(self.key(id + ':collabs'), access, next);
+			self.redis.del(self.key(id + ':collabs'), next);
 		}
 	], done)
 }

@@ -76,19 +76,120 @@ describe('collaborator-map', function(){
 
   })
 
-  it('should allow a private project to not be read by a non collaborator', function(done){
-  	done();
-
-  })
-
   it('should allow a public project to be read by a non-collaborator', function(done){
-  	done();
+  	map.create_project('bobsnewprojects', 'bob', 'public', function(error){
+  		map.get_access('bobsnewprojects', 'pete', function(error, access){
+  			access.should.equal('read');
+  			done();
+  		})
+  	})
 
   })
 
   it('should stop access once a collaborator has been removed', function(done){
-  	done();
+  	map.create_project('bobsnewprojects', 'bob', 'private', function(error){
 
+  		async.series([
+  			
+
+  			function(next){
+  				map.add_collaborator('bobsnewprojects', 'pete', next);
+  			},
+
+  			function(next){
+  				map.get_access('bobsnewprojects', 'pete', function(error, access){
+  					if(error){
+  						throw new Error(error);
+  					}
+
+  					access.should.equal('write');
+  					next();
+  				})
+  			},
+
+  			function(next){
+  				map.remove_collaborator('bobsnewprojects', 'pete', next);
+  			},
+
+  			function(next){
+  				map.get_access('bobsnewprojects', 'pete', function(error, access){
+  					if(error){
+  						throw new Error(error);
+  					}
+
+  					access.should.equal('none');
+  					next();
+  				})
+  			}
+
+  		], done)
+
+  	})
+
+  })
+
+  it('should allow a whole project to be renamed', function(done){
+
+  	map.create_project('bobsnewprojects', 'bob', 'private', function(error){
+  		async.series([
+  			
+
+  			function(next){
+  				map.add_collaborator('bobsnewprojects', 'pete', next);
+  			},
+
+  			function(next){
+
+  				map.rename_project('bobsnewprojects', 'otherproject', next);
+
+  			},
+
+  			function(next){
+  				map.get_access('otherproject', 'pete', function(error, access){
+  					if(error){
+  						throw new Error(error);
+  					}
+
+  					access.should.equal('write');
+  					next();
+  				})
+  			}
+
+  		], done)
+
+
+  	})
+
+  })
+
+  it('should list the collaborators of a project', function(done){
+  	map.create_project('bobsnewprojects', 'bob', 'private', function(error){
+  		async.series([
+  			
+
+  			function(next){
+  				map.add_collaborator('bobsnewprojects', 'pete', next);
+  			},
+
+  			function(next){
+  				map.add_collaborator('bobsnewprojects', 'steve', next);
+  			},
+
+  			function(next){
+  				map.add_collaborator('bobsnewprojects', 'nigel', next);
+  			},
+
+  			function(next){
+  				map.get_collaborators('bobsnewprojects', function(error, collabs){
+  					collabs.length.should.equal(4);
+  					collabs = collabs.sort();
+  					collabs[3].should.equal('steve');
+  					next();
+  				})
+  			}
+
+  		], done)
+  	})
   })
 
 })
