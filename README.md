@@ -93,6 +93,22 @@ map.rename_project('oldprojectid', 'newprojectid', next);
 
 ```
 
+### listing user projects
+
+You can list the projects that a user can access.
+
+The list contains objects with the following properties:
+
+ * id - the project id
+ * access - the access setting (public | private)
+ * owner - whether the user is the owner of the project (true | false)
+
+```js
+map.get_projects('bob', function(error, projects){
+	// projects is an array of objects
+})
+```
+
 ## licence
 
 MIT
