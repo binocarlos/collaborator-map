@@ -1,6 +1,6 @@
 {
   "name": "collaborator-map",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A redis based data structure that maps users and collaborators onto project names",
   "main": "src/index.js",
   "scripts": {
