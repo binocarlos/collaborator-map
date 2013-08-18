@@ -1,0 +1,32 @@
+{
+  "name": "collaborator-map",
+  "version": "0.0.1",
+  "description": "A redis based data structure that maps users and collaborators onto project names",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/binocarlos/collaborator-map.git"
+  },
+  "keywords": [
+    "redis",
+    "collaborators"
+  ],
+  "author": "Kai Davenport",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/binocarlos/collaborator-map/issues"
+  },
+  "devDependencies": {
+    "should": "*",
+    "mocha": "*"
+  },
+  "dependencies": {
+    "async": "~0.2.9",
+    "redis": "~0.8.4",
+    "lodash": "~1.3.1",
+    "hiredis": "~0.1.15"
+  }
+}
