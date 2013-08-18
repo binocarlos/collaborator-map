@@ -85,6 +85,55 @@ Map.prototype.get_access = function(id, user, done){
 	})
 }
 
+/*
+
+	return a list of project names with access levels and status for the given user
+	
+*/
+Map.prototype.get_projects = function(user, done){
+	var self = this;
+	self.redis.smembers(self.key(user + ':projects'), function(error, projects){
+		if(error){
+			done(error);
+			return;
+		}
+		/*
+		
+			for each project get the access level and whether we are the owner
+			
+		*/
+		var fns = projects.map(function(projectid){
+			return function(projectdone){
+				async.parallel({
+					access:function(next){
+						self.redis.get(self.key(projectid + ':access'), next);
+					},
+					owner:function(next){
+						self.redis.get(self.key(projectid), function(error, owner){
+							if(error){
+								next(error);
+							}
+							else{
+								next(null, owner==user);
+							}
+						})
+					}
+				}, function(error, results){
+					if(error){
+						projectdone(error);
+					}
+					else{
+						results.id = projectid;	
+						projectdone(null, results);
+					}
+					
+				})
+			}
+		})
+
+		async.parallel(fns, done);
+	})
+}
 
 /*
 
@@ -103,7 +152,18 @@ Map.prototype.get_owner = function(id, done){
 
 Map.prototype.add_collaborator = function(id, user, done){
 	var self = this;
-	self.redis.sadd(self.key(id + ':collabs'), user, done);
+
+	async.parallel([
+		function(next){
+			self.redis.sadd(self.key(id + ':collabs'), user, next);	
+		},
+
+		function(next){
+			self.redis.sadd(self.key(user + ':projects'), id, next);	
+		}
+		
+	], done)
+	
 }
 
 Map.prototype.get_collaborators = function(id, done){
@@ -118,7 +178,15 @@ Map.prototype.remove_collaborator = function(id, user, done){
 			done('cannot remove the owner from the collaborators');
 			return;
 		}
-		self.redis.srem(self.key(id + ':collabs'), user, done);
+		async.parallel([
+			function(next){
+				self.redis.srem(self.key(id + ':collabs'), user, next);
+			},
+			function(next){
+				self.redis.srem(self.key(user + ':projects'), id, next);
+			}
+		], done)
+		
 	})
 }
 
@@ -158,6 +226,9 @@ Map.prototype.create_project = function(id, owner, access, done){
 			},
 			function(next){
 				self.redis.sadd(self.key(id + ':collabs'), owner, next);
+			},
+			function(next){
+				self.redis.sadd(self.key(owner + ':projects'), id, next);
 			}
 		], done);
 	})
@@ -196,8 +267,18 @@ Map.prototype.rename_project = function(id, newid, done){
 				},
 				function(next){
 
-					async.forEach(project.collabs, function(collab, next){
-						self.redis.sadd(self.key(newid + ':collabs'), collab, next);
+					async.forEach(project.collabs, function(collab, nextcollab){
+
+						async.parallel([
+							function(nextp){
+								self.redis.sadd(self.key(newid + ':collabs'), collab, nextp);
+							},
+
+							function(nextp){
+								self.redis.sadd(self.key(collab + ':projects'), newid, nextp);	
+							}
+						], nextcollab)
+						
 					}, next)
 
 				}
@@ -209,17 +290,27 @@ Map.prototype.rename_project = function(id, newid, done){
 
 Map.prototype.delete_project = function(id, done){
 	var self = this;
-	async.parallel([
-		function(next){
-			self.redis.del(self.key(id), next);
-		},
-		function(next){
-			self.redis.del(self.key(id + ':access'), next);
-		},
-		function(next){
-			self.redis.del(self.key(id + ':collabs'), next);
-		}
-	], done)
+
+	self.redis.smembers(self.key(id + ':collabs'), function(error, members){
+		async.parallel([
+			function(next){
+				async.forEach(members, function(member, nextmember){
+					self.redis.srem(self.key(member + ':projects'), id, done);
+				})
+			},
+
+			function(next){
+				self.redis.del(self.key(id), next);
+			},
+			function(next){
+				self.redis.del(self.key(id + ':access'), next);
+			},
+			function(next){
+				self.redis.del(self.key(id + ':collabs'), next);
+			}
+		], done)
+	})
+	
 }
 
 module.exports = function factory(options){

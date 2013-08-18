@@ -131,6 +131,7 @@ describe('collaborator-map', function(){
   it('should allow a whole project to be renamed', function(done){
 
   	map.create_project('bobsnewprojects', 'bob', 'private', function(error){
+
   		async.series([
   			
 
@@ -145,17 +146,23 @@ describe('collaborator-map', function(){
   			},
 
   			function(next){
+
   				map.get_access('otherproject', 'pete', function(error, access){
   					if(error){
   						throw new Error(error);
   					}
 
   					access.should.equal('write');
-  					next();
+  					//next();
   				})
   			}
 
-  		], done)
+  		], function(error){
+        if(error){
+          throw new Error(error);
+        }
+        done();
+      })
 
 
   	})
@@ -192,6 +199,55 @@ describe('collaborator-map', function(){
   	})
   })
 
+
+  it('should list multiple projects for one user with the status', function(done){
+
+    async.series([
+      function(next){
+        map.create_project('bobproject1', 'bob', 'private', next);
+      },
+
+      function(next){
+        map.create_project('bobproject2', 'bob', 'public', next);
+      },
+
+      function(next){
+        map.create_project('steveproject1', 'steve', 'public', next);
+      },
+
+      function(next){
+        map.add_collaborator('steveproject1', 'bob', next);
+      },
+
+      function(next){
+        map.get_projects('bob', function(error, projects){
+          if(error){
+            throw new Error(error);
+          }
+          function compare(a,b) {
+          if (a.id < b.id)
+               return -1;
+            if (a.id > b.id)
+              return 1;
+            return 0;
+          }
+
+          projects.sort(compare);
+
+          projects.length.should.equal(3);
+          projects[0].access.should.equal('private');
+          projects[1].access.should.equal('public');
+          projects[2].access.should.equal('public');
+          projects[1].owner.should.equal(true);
+          projects[2].owner.should.equal(false);
+          done();
+
+        })
+      }
+
+    ])
+
+  })
 
   it('should not allow the owner of a project to be removed as a collaborator', function(done){
     map.create_project('bobsnewprojects', 'bob', 'private', function(error){
