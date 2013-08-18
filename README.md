@@ -28,20 +28,71 @@ var map = Collaborators({
 
 ### adding a project
 
-If your system creates a new project - tell the map by passing the project id, owner id and access level.
+When a user creates a new resource that requires access control - tell the map about the:
+
+ * project id
+ * owner id
+ * access level
 
 ```js
 
 // project_id = binocarlos/countries
 // user_id = binocarlos
 // access = private
+
 map.create_project('binocarlos/countries', 'binocarlos', 'private', function(error){
 	
 })
 ```
 
-### adding collaborators
+### getting access
 
-You can also add other users onto the project - note, the owner of the project (the one that created it) is always a collaborator on it.
+There are 3 access levels a given user can obtain with a resource:
 
+ * read
+ * write
+ * none
 
+To get the access level for any user on a particular project id:
+
+```js
+map.get_access('binocarlos/countries', 'otheruser', function(error, access){
+	
+	// from our example above access would be 'none' - the project is private
+
+})
+
+```
+
+### collaborators
+
+The people who can write to a project (or read a private one) are called 'collaborators'.
+
+By default the owner of a project is a collaborator (and cannot be removed as one).
+
+You can added and remove collaborators to a project:
+
+Add a user:
+
+```js
+map.add_collaborator('bobsnewprojects', 'pete', next);
+```
+
+Remove a user:
+
+```js
+map.remove_collaborator('bobsnewprojects', 'pete', next);
+```
+
+### renaming projects
+
+If for some reason you want to change the id by which you refer to a project:
+
+```js
+map.rename_project('oldprojectid', 'newprojectid', next);
+
+```
+
+## licence
+
+MIT
