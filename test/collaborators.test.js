@@ -192,4 +192,26 @@ describe('collaborator-map', function(){
   	})
   })
 
+
+  it('should not allow the owner of a project to be removed as a collaborator', function(done){
+    map.create_project('bobsnewprojects', 'bob', 'private', function(error){
+      async.series([
+        
+
+        function(next){
+          map.add_collaborator('bobsnewprojects', 'pete', next);
+        },
+
+        function(next){
+          map.remove_collaborator('bobsnewprojects', 'bob', function(error){
+            error.should.equal('cannot remove the owner from the collaborators');
+            next();
+          });
+        }
+
+
+      ], done)
+    })
+  })
+
 })
