@@ -150,6 +150,12 @@ Map.prototype.get_owner = function(id, done){
 	self.redis.get(this.key(id), done);
 }
 
+Map.prototype.project_exists = function(id, done){
+	this.get_owner(id, function(error, owner){
+		done(error, !error && owner!=null);
+	})
+}
+
 Map.prototype.add_collaborator = function(id, user, done){
 	var self = this;
 

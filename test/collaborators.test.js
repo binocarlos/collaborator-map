@@ -86,6 +86,19 @@ describe('collaborator-map', function(){
 
   })
 
+  it('should let us know if a project exists', function(done){
+    map.create_project('bobsnewprojects', 'bob', 'public', function(error){
+      map.project_exists('bobsnewprojects', function(error, exists){
+        exists.should.equal(true);
+        map.project_exists('otherproject', function(error, exists){
+          exists.should.equal(false);
+          done();
+        })
+      })
+    })
+
+  })
+
   it('should stop access once a collaborator has been removed', function(done){
   	map.create_project('bobsnewprojects', 'bob', 'private', function(error){
 
