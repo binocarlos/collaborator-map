@@ -22,7 +22,7 @@ var map = Collaborators({
 
 	// this will be prepended to all redis keys used by the map
 	prefix:'mycustomprefix'
-}
+})
 
 ```
 
