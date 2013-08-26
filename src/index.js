@@ -24,7 +24,13 @@ var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
 function Map(options){
+	var self = this;
 	this.redis = redis.createClient(options.port, options.host);
+	if(options.pass){
+		this.redis.auth(options.pass, function(){
+			self.emit('authenticated');
+		})
+	}
 	this.prefix = options.prefix;
 }
 
