@@ -84,6 +84,13 @@ Remove a user:
 map.remove_collaborator('bobsnewprojects', 'pete', next);
 ```
 
+Get the current collaborators for a project:
+
+```js
+map.get_collaborators('bobsnewprojects', function(error, user_id_array){
+	...
+})
+```
 ### renaming projects
 
 If for some reason you want to change the id by which you refer to a project:
